@@ -16,10 +16,8 @@ void vault_diff_print(const DiffResult *result,
     (void) result;
     (void) old_path;
     (void) new_path;
-    return VAULT_OK;
 }
 
 void vault_diff_free(DiffResult *result){
     (void) result;
-    return VAULT_OK;
 }

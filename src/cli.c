@@ -48,3 +48,8 @@ void vault_cmd_help(void){
 void vault_args_free(VaultArgs *args){
     (void) args;
 }
+
+VaultError vault_dispatch(const VaultArgs *args){
+    (void) args;
+    return VAULT_OK;
+}

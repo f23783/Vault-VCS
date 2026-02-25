@@ -135,7 +135,8 @@ typedef enum {
     VAULT_ERR_COMPRESS  = -3,   /* zlib sıkıştırma/açma hatası */
     VAULT_ERR_NOMEM     = -4,   /* Bellek ayırma (malloc) başarısız */
     VAULT_ERR_NOTFOUND  = -5,   /* Nesne disktte bulunamadı */
-    VAULT_ERR_CORRUPT   = -6    /* Nesne bozuk veya okunamıyor */
+    VAULT_ERR_CORRUPT   = -6,    /* Nesne bozuk veya okunamıyor */
+    VAULT_ERR_OPENSSL   = -7    /*OpenSSL hatası */
 } VaultError;
 
 /* ---- Fonksiyon İmzaları (Architect'in implement edeceği) --------------- */

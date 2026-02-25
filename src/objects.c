@@ -1,10 +1,41 @@
 #include "../include/vault_objects.h"
+#include <stddef.h> 
+#include <stdint.h>
+#include <openssl/evp.h>
 
 VaultError vault_hash_content(const uint8_t *data, size_t size,
                               char out_hash[VAULT_HASH_HEX_SIZE]){
-    (void)data;
-    (void)size;
-    (void)out_hash;
+
+    EVP_MD_CTX *context = EVP_MD_CTX_new();
+
+    if(context == NULL){
+        return VAULT_ERR_NOMEM;
+     }
+
+    if(EVP_DigestInit_ex(context, EVP_sha256(), NULL) != 1){
+        EVP_MD_CTX_free(context);
+        return VAULT_ERR_OPENSSL;
+    }
+
+    if (EVP_DigestUpdate(context, data, size) != 1){
+        EVP_MD_CTX_free(context);
+        return VAULT_ERR_OPENSSL;
+    }
+    unsigned char hash_result[EVP_MAX_MD_SIZE];
+    unsigned int hash_len;
+
+    if(EVP_DigestFinal_ex(context, hash_result, &hash_len)!= 1){
+         EVP_MD_CTX_free(context);
+         return VAULT_ERR_OPENSSL;
+    }
+    
+    for (int i = 0; i < 32; i++){
+        sprintf(&out_hash[i * 2], "%02x", hash_result[i]);
+    }
+
+    out_hash[64] = '\0';
+    EVP_MD_CTX_free(context);
+
     return VAULT_OK;
 }
 

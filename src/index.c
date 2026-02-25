@@ -1,7 +1,50 @@
+#define  _GNU_SOURCE
 #include "../include/vault_index.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 VaultError vault_index_load(VaultIndex *idx){
-    (void)idx;
+    FILE *fptr;
+    fptr = fopen(VAULT_INDEX_FILE, "r");
+    idx->capacity = 2;
+    idx->entries = (IndexEntry *)malloc(idx->capacity * sizeof(IndexEntry));
+    char *line = NULL;
+    size_t capacity = 0;
+    ssize_t readed;
+
+    if (fptr == NULL) {
+        return VAULT_ERR_IO;
+    }
+
+    while ((readed = getline(&line, &capacity, fptr)) != -1)  {
+        if (idx->count >= idx->capacity) {
+            idx->capacity *= 2;
+            IndexEntry *temp = (IndexEntry *)realloc(idx->entries, idx->capacity * sizeof(IndexEntry));
+            if (temp == NULL) {
+                free(line);
+                fclose(fptr);
+                return VAULT_ERR_NOMEM;
+            }
+            idx->entries = temp;
+        }
+
+        char *hash_tok = strtok(line, " ");
+        char *mtime_tok = strtok(NULL, " ");
+        char *filepath_tok = strtok(NULL, "\n");
+
+        if (hash_tok && mtime_tok && filepath_tok) {
+            strncpy(idx->entries[idx->count].hash, hash_tok, VAULT_HASH_HEX_SIZE - 1);
+            idx->entries[idx->count].hash[VAULT_HASH_HEX_SIZE - 1] = '\0';
+            idx->entries[idx->count].mtime = atol(mtime_tok);
+            strncpy(idx->entries[idx->count].filepath, filepath_tok, VAULT_MAX_PATH - 1);
+            idx->entries[idx->count].filepath[VAULT_MAX_PATH - 1] = '\0';
+            idx->count++;
+        }
+    }
+
+    free(line);
+    fclose(fptr);
     return VAULT_OK;
 }
 

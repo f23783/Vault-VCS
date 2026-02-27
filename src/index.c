@@ -1,5 +1,6 @@
 #define  _GNU_SOURCE
 #include "../include/vault_index.h"
+#include "../include/vault_objects.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,13 +50,84 @@ VaultError vault_index_load(VaultIndex *idx){
 }
 
 VaultError vault_index_save(const VaultIndex *idx){
-    (void)idx;
+    FILE *fptr;
+
+    fptr = fopen("index_new", "w");
+
+    if (fptr == NULL) {
+        return VAULT_ERR_IO;
+    }
+    for (int i = 0; i < idx->count; i++) {
+        fprintf(fptr, "%s %ld %s\n", idx->entries[i].hash, idx->entries[i].mtime, idx->entries[i].filepath);
+    }
+
+    fclose(fptr);
+
+    if (rename("index_new", ".vault/index") != 0) {
+        return VAULT_ERR_IO;
+    }
     return VAULT_OK;
 }
 
 VaultError vault_index_add(VaultIndex *idx, const char *filepath){
-    (void)idx;
-    (void)filepath;
+    char hash[VAULT_HASH_HEX_SIZE];
+    FILE *fptr = fopen(filepath, "r");
+    if (fptr == NULL) {
+        fclose(fptr);
+        return VAULT_ERR_IO;
+    }
+    else {
+        if (vault_index_find(idx, filepath) == -1) {
+
+        }
+        else {
+            size_t capacity = 1024;
+            size_t length = 0;
+            char *content = (char *)malloc(capacity);
+
+            int ch;
+            while ((ch = fgetc(fptr)) != EOF) {
+                if (length >= capacity) {
+                    capacity *= 2;
+                    char *temp = (char *)realloc(content, capacity);
+                    if (temp == NULL) {
+                        free(content);
+                        fclose(fptr);
+                        return VAULT_ERR_NOMEM;
+                    }
+                    content = temp;
+                }
+                content[length++] = (char)ch;
+            }
+            content[length] = '\0';
+
+            vault_hash_content((uint8_t *)content, capacity, hash);
+            free(content);
+            fclose(fptr);
+            int index_location = vault_index_find(idx, filepath);//todo muhtemelen aşağıdaki -1 buglar
+            if (index_location != -1 && strcmp(idx->entries[index_location - 1].hash, hash) == 0) {
+                return VAULT_OK;
+            }
+            else if (index_location != -1 && strcmp(idx->entries[index_location - 1].hash, hash) != 0) {
+                strcpy(idx->entries[index_location - 1].hash, hash);
+            }
+            else if (index_location != -1) {
+                idx->count ++;
+                if (idx->count >= idx->capacity) {
+                    idx->capacity *= 2;
+                    IndexEntry *temp = (IndexEntry *)realloc(idx->entries, idx->capacity * sizeof(IndexEntry));
+                    if (temp == NULL) {
+                        return VAULT_ERR_NOMEM;
+                    }
+                    idx->entries = temp;
+                }
+                strcpy(idx->entries[idx->count].filepath, filepath);
+                strcpy(idx->entries[idx->count].hash, hash);
+                idx->entries[idx->count].mtime = time(NULL);
+            }
+        }
+    }
+
     return VAULT_OK;
 }
 

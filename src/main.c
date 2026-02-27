@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     }
 
     /* Argümanları parse et */
-    VaultArgs args;
+    VaultArgs args = {0};
     VaultError err = vault_parse_args(argc, argv, &args);
     if (err != VAULT_OK) {
         fprintf(stderr, "vault: invalid arguments. See 'vault help'.\n");
